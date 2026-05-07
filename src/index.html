@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video2Audio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Video<span class="accent">2</span>Audio</h1>
+      <p class="subtitle" data-i18n="subtitle"></p>
+      <div class="header-buttons">
+        <button id="lang-toggle" class="header-btn" title="Language">
+          <span id="lang-label"></span>
+        </button>
+        <button id="theme-toggle" class="header-btn" title="Toggle theme">
+          <svg id="theme-icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg id="theme-icon-light" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="drop-zone" class="drop-zone">
+      <div class="drop-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <p class="drop-text" data-i18n="dropText"></p>
+      <p class="drop-hint" data-i18n="dropHint"></p>
+      <p id="drop-notice" class="drop-notice hidden"></p>
+      <div id="drop-loading" class="drop-loading hidden">
+        <div class="spinner"></div>
+        <span data-i18n="scanning"></span>
+        <button id="cancel-scan-btn" class="cancel-scan-btn" data-i18n="cancel"></button>
+      </div>
+      <div class="pick-buttons">
+        <button id="pick-files" class="pick-btn" data-i18n="pickFiles"></button>
+        <button id="pick-folder" class="pick-btn" data-i18n="pickFolder"></button>
+      </div>
+    </div>
+
+    <div id="file-list-section" class="file-list-section hidden">
+      <div class="file-list-header">
+        <span id="file-count" class="file-count"></span>
+        <div class="file-list-actions">
+          <button id="add-more-btn" class="file-list-btn" data-i18n="addMore"></button>
+          <button id="add-folder-btn" class="file-list-btn" data-i18n="addFolder"></button>
+          <button id="clear-all-btn" class="file-list-btn danger" data-i18n="clearAll"></button>
+        </div>
+      </div>
+      <div id="file-list" class="file-list"></div>
+      <div id="file-list-loading" class="drop-loading hidden">
+        <div class="spinner"></div>
+        <span data-i18n="scanning"></span>
+        <button id="cancel-scan-btn-2" class="cancel-scan-btn" data-i18n="cancel"></button>
+      </div>
+      <div id="skipped-notice" class="skipped-notice hidden"></div>
+    </div>
+
+    <div class="settings">
+      <div class="setting-group">
+        <label data-i18n="format"></label>
+        <div class="format-toggle">
+          <button id="btn-mp3" class="format-btn active" data-format="mp3">MP3</button>
+          <button id="btn-wav" class="format-btn" data-format="wav">WAV</button>
+        </div>
+      </div>
+
+      <div class="setting-group" id="bitrate-group">
+        <label data-i18n="bitrate"></label>
+        <select id="bitrate">
+          <option value="128k">128 kbps</option>
+          <option value="192k" selected>192 kbps</option>
+          <option value="256k">256 kbps</option>
+          <option value="320k">320 kbps</option>
+        </select>
+      </div>
+
+      <div class="setting-group" id="sample-rate-group">
+        <label data-i18n="sampleRate"></label>
+        <select id="sample-rate">
+          <option value="22050">22050 Hz</option>
+          <option value="44100" selected>44100 Hz</option>
+          <option value="48000">48000 Hz</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="quality-mode">
+      <button id="max-quality-btn" class="quality-toggle-btn" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/>
+        </svg>
+        <span data-i18n="maxQuality"></span>
+      </button>
+      <span class="quality-hint" data-i18n="maxQualityHint"></span>
+    </div>
+
+    <div class="quality-mode">
+      <button id="save-next-btn" class="quality-toggle-btn" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span data-i18n="saveNextToSource"></span>
+      </button>
+      <span class="hint-when-inactive" data-i18n="customLocationHint"></span>
+    </div>
+
+    <button id="convert-btn" class="convert-btn" disabled>
+      <span class="btn-text" data-i18n="convert"></span>
+    </button>
+
+    <div id="progress-section" class="progress-section hidden">
+      <div id="batch-status" class="batch-status hidden"></div>
+      <div class="progress-bar-container">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+      <div class="progress-info">
+        <span id="progress-percent">0%</span>
+        <span id="progress-time">00:00:00</span>
+        <span id="progress-speed"></span>
+      </div>
+      <div class="progress-controls">
+        <button id="pause-btn" class="control-btn pause-btn">
+          <svg id="pause-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+          </svg>
+          <svg id="resume-icon" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          <span id="pause-text" data-i18n="pause"></span>
+        </button>
+        <button id="cancel-btn" class="control-btn cancel-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          <span data-i18n="cancel"></span>
+        </button>
+      </div>
+    </div>
+
+    <div id="done-section" class="done-section hidden">
+      <div id="done-icon" class="done-icon">&#10003;</div>
+      <p id="done-message"></p>
+      <p id="done-location" class="done-location hidden"></p>
+      <button id="open-folder-btn" class="done-action hidden" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span data-i18n="openFolder"></span>
+      </button>
+    </div>
+  </div>
+
+  <div id="drag-overlay" class="drag-overlay hidden" aria-hidden="true">
+    <div class="drag-overlay-content">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <p data-i18n="dropToAdd"></p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

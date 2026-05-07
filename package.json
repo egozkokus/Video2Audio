@@ -1,0 +1,11 @@
+{
+  "name": "video2audio",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "cargo tauri dev --features devtools",
+    "build:installer": "cargo tauri build",
+    "build:portable": "cargo tauri build --features portable --config src-tauri/tauri.portable.conf.json && powershell -NoProfile -ExecutionPolicy Bypass -File src-tauri/scripts/sign.ps1 -File src-tauri/target/release/video2audio.exe",
+    "setup:cert": "powershell -NoProfile -ExecutionPolicy Bypass -File src-tauri/scripts/setup-cert.ps1"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicedayzhu/tauri-v2-schema/refs/heads/main/tauri.conf.json.schema",
+  "productName": "Video2Audio",
+  "version": "1.0.0",
+  "identifier": "com.video2audio.easy",
+  "build": {
+    "frontendDist": "../src",
+    "beforeBundleCommand": "powershell -NoProfile -ExecutionPolicy Bypass -File src-tauri/scripts/sign.ps1 -File src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Video2Audio",
+        "width": 700,
+        "height": 550,
+        "resizable": true,
+        "minWidth": 600,
+        "minHeight": 450,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "publisher": "Video2Audio",
+    "copyright": "Copyright © 2024 Video2Audio",
+    "category": "Utility",
+    "shortDescription": "Convert video files to MP3 & WAV audio",
+    "longDescription": "Video2Audio is a fast and easy-to-use tool for extracting audio from video files. Supports MP3 and WAV output formats with customizable bitrate and sample rate settings.",
+    "resources": {
+      "binaries/ffmpeg-x86_64-pc-windows-msvc.exe": "ffmpeg.exe"
+    },
+    "fileAssociations": [
+      {
+        "ext": ["mp4", "mkv", "avi", "mov", "flv", "webm", "wmv"],
+        "mimeType": "video/*",
+        "name": "Video File",
+        "role": "Viewer"
+      }
+    ],
+    "windows": {
+      "certificateThumbprint": "533BAC4584E81A605E82E33893FD96825FE0159D",
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "http://timestamp.digicert.com",
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "icons/nsis-header.bmp",
+        "sidebarImage": "icons/nsis-sidebar.bmp",
+        "displayLanguageSelector": false,
+        "installMode": "currentUser",
+        "startMenuFolder": "Video2Audio",
+        "languages": ["English", "Hebrew"],
+        "installerHooks": "nsis/installer.nsh"
+      }
+    }
+  }
+}

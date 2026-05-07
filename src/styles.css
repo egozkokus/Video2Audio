@@ -1,0 +1,778 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0f0f13;
+  --surface: #1a1a24;
+  --surface2: #22223a;
+  --accent: #6c5ce7;
+  --accent-light: #a29bfe;
+  --text: #e8e8f0;
+  --text-dim: #a0a0b8;
+  --success: #00b894;
+  --error: #e74c3c;
+  --warning: #f39c12;
+  --border: #2a2a40;
+  --radius: 12px;
+}
+
+[data-theme="light"] {
+  --bg: #f5f5f8;
+  --surface: #ffffff;
+  --surface2: #eeeef2;
+  --accent: #6c5ce7;
+  --accent-light: #5a4bd4;
+  --text: #1a1a2e;
+  --text-dim: #5a5a72;
+  --success: #00a884;
+  --error: #dc3545;
+  --warning: #e67e22;
+  --border: #d8d8e4;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  overflow: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Smooth theme transitions on static text + bordered surfaces */
+header h1, .subtitle, .setting-group label, .file-count, .file-item-name,
+#done-message, #done-location, .drop-text, .drop-hint {
+  transition: color 0.3s;
+}
+
+/* Visible focus indicator for keyboard navigation across all controls */
+button:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.app {
+  width: 100%;
+  max-width: 580px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 4px;
+  position: relative;
+}
+
+header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.accent {
+  color: var(--accent-light);
+}
+
+[data-theme="light"] .accent {
+  color: var(--accent);
+}
+
+.subtitle {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* Header Buttons */
+.header-buttons {
+  position: absolute;
+  top: 0;
+  display: flex;
+  gap: 6px;
+}
+
+[dir="ltr"] .header-buttons {
+  right: 0;
+}
+
+[dir="rtl"] .header-buttons {
+  left: 0;
+}
+
+.header-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: all 0.25s;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 32px;
+  justify-content: center;
+}
+
+.header-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Drop Zone */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 36px 20px;
+  text-align: center;
+  transition: all 0.25s ease;
+  background: var(--surface);
+}
+
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--surface2);
+}
+
+.drop-zone.drag-over {
+  transform: scale(1.01);
+}
+
+.drop-icon {
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  transition: color 0.25s;
+}
+
+.drop-zone:hover .drop-icon {
+  color: var(--accent-light);
+}
+
+.drop-text {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.drop-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
+/* Drop Notice */
+.drop-notice {
+  font-size: 13px;
+  color: var(--warning);
+  margin-top: 10px;
+}
+
+/* Drop Loading */
+.drop-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.cancel-scan-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-scan-btn:hover {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+/* Notice (no files in drop zone) */
+.notice-warn {
+  color: var(--warning);
+}
+
+/* Pick Buttons */
+.pick-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.pick-btn {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pick-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--surface);
+}
+
+/* File List */
+.file-list-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all 0.25s;
+}
+
+.file-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+
+.file-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.file-list-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.file-list-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.file-list-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.file-list-btn.danger:hover {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.file-list {
+  max-height: 160px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.file-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.file-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.file-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.file-item:last-child {
+  border-bottom: none;
+}
+
+.file-item:hover {
+  background: var(--surface2);
+}
+
+.file-item svg {
+  color: var(--accent-light);
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .file-item svg {
+  color: var(--accent);
+}
+
+.file-item-name {
+  flex: 1;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: ltr;
+  text-align: left;
+}
+
+.file-item-remove {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  opacity: 0;
+  flex-shrink: 0;
+}
+
+.file-item:hover .file-item-remove {
+  opacity: 1;
+}
+
+.file-item-remove:hover {
+  color: var(--error);
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.skipped-notice {
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--warning);
+  background: rgba(243, 156, 18, 0.08);
+  border-top: 1px solid var(--border);
+  transition: opacity 0.3s;
+}
+
+/* Settings */
+.settings {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+}
+
+.setting-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.setting-group label {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.format-toggle {
+  display: flex;
+  background: var(--surface);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: all 0.25s;
+}
+
+.format-btn {
+  flex: 1;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.format-btn.active {
+  background: var(--accent);
+  color: white;
+}
+
+select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all 0.25s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0a0b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+}
+
+[dir="ltr"] select {
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+[dir="rtl"] select {
+  background-position: left 10px center;
+  padding-left: 28px;
+}
+
+select:focus {
+  border-color: var(--accent);
+}
+
+/* Max Quality */
+.quality-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: -6px;
+}
+
+.quality-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quality-toggle-btn svg {
+  opacity: 0.55;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.quality-toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.quality-toggle-btn:hover svg {
+  opacity: 0.85;
+}
+
+.quality-toggle-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: 0 2px 10px rgba(108, 92, 231, 0.25);
+}
+
+.quality-toggle-btn.active svg {
+  opacity: 1;
+}
+
+.quality-hint,
+.hint-when-inactive {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.quality-toggle-btn.active + .quality-hint {
+  opacity: 1;
+}
+
+.quality-toggle-btn:not(.active) + .hint-when-inactive {
+  opacity: 1;
+}
+
+.settings.max-quality-on #bitrate-group,
+.settings.max-quality-on #sample-rate-group {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Convert Button */
+.convert-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.convert-btn:hover:not(:disabled) {
+  background: #5a4bd4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(108, 92, 231, 0.3);
+}
+
+.convert-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.convert-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Progress */
+.progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.batch-status {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: center;
+  direction: ltr;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+  transition: background 0.25s;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-bar.paused {
+  background: var(--warning);
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-dim);
+  direction: ltr;
+}
+
+/* Progress Controls */
+.progress-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.control-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-btn:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+}
+
+.cancel-btn:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.pause-btn:hover {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.pause-btn.paused {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+/* Done */
+.done-section {
+  text-align: center;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.done-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.done-location {
+  font-size: 12px;
+  color: var(--text-dim);
+  direction: ltr;
+  word-break: break-all;
+  max-width: 100%;
+  line-height: 1.4;
+}
+
+.done-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+.done-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.done-icon.success {
+  background: rgba(0, 184, 148, 0.15);
+  color: var(--success);
+}
+
+.done-icon.error {
+  background: rgba(231, 76, 60, 0.15);
+  color: var(--error);
+}
+
+.done-icon.cancelled {
+  background: rgba(243, 156, 18, 0.15);
+  color: var(--warning);
+}
+
+#done-message {
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* Utility */
+.hidden {
+  display: none !important;
+}
+
+/* Window-wide drag overlay */
+.drag-overlay {
+  position: fixed;
+  inset: 8px;
+  background: rgba(108, 92, 231, 0.08);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: dragFadeIn 0.15s ease-out;
+}
+
+.drag-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+@keyframes dragFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.converting .btn-text {
+  animation: pulse 1.5s infinite;
+}
