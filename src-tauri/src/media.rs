@@ -59,10 +59,10 @@ fn check_magic_bytes(path: &str) -> bool {
     if &buf[0..4] == b".RMF" {
         return true;
     }
-    if n >= 188 && buf[0] == 0x47 && buf[188..].first() == Some(&0x47) {
+    if n >= 189 && buf[0] == 0x47 && buf[188] == 0x47 {
         return true;
     }
-    if n >= 196 + 1 && buf[4] == 0x47 && buf[4 + 192] == 0x47 {
+    if n > 196 && buf[4] == 0x47 && buf[4 + 192] == 0x47 {
         return true;
     }
 
@@ -101,7 +101,6 @@ pub async fn validate_media_files(paths: Vec<String>) -> Result<(Vec<String>, us
         (valid, skipped)
     })
     .await
-    .map(|(valid, skipped)| (valid, skipped))
     .map_err(|e| format!("Validation task failed: {}", e))
 }
 
@@ -119,7 +118,6 @@ pub async fn scan_folder(app: tauri::AppHandle, path: String) -> Result<(Vec<Str
         (files, skipped)
     })
     .await
-    .map(|(files, skipped)| (files, skipped))
     .map_err(|e| format!("Scan task failed: {}", e))
 }
 

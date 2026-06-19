@@ -64,6 +64,7 @@ pub async fn pause_conversion(app: tauri::AppHandle) -> Result<bool, String> {
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn convert_file(
     app: tauri::AppHandle,
     input_path: String,
@@ -81,6 +82,8 @@ pub async fn convert_file(
     // cancel_conversion call will set it back to true and we'll honor it.
     *state.cancelled.lock().unwrap() = false;
 
+    // "-map 0:a:0" selects the first audio track only. Files with multiple
+    // audio streams (e.g. multi-language) extract track 0 by design.
     let mut args: Vec<String> = vec![
         "-y".into(),
         "-threads".into(),
@@ -164,7 +167,7 @@ pub async fn convert_file(
             ^ (std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
-                .subsec_nanos() as u32),
+                .subsec_nanos()),
         ext
     );
     let temp_path = out
@@ -210,7 +213,7 @@ pub async fn convert_file(
     let stderr_handle = std::thread::spawn(move || {
         let reader = BufReader::new(stderr);
         let mut collected = String::new();
-        for line in reader.lines().flatten() {
+        for line in reader.lines().map_while(Result::ok) {
             if line.contains("Duration:") {
                 if let Some(start) = line.find("Duration:") {
                     let after = &line[start + 9..];
@@ -240,7 +243,7 @@ pub async fn convert_file(
         let mut current_speed = String::new();
         let mut got_progress_end = false;
 
-        for line in reader.lines().flatten() {
+        for line in reader.lines().map_while(Result::ok) {
             if line.starts_with("out_time=") {
                 let val = line.trim_start_matches("out_time=");
                 if let Some(secs) = parse_duration_secs(val) {

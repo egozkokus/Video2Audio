@@ -562,7 +562,11 @@ listen('tauri://drag-drop', async (event) => {
   scanCancelled = false;
   showLoading(true);
   try {
-    let allPaths = [];
+    // Files returned by scan_folder are already validated in Rust; only loose
+    // (non-folder) dropped paths still need a magic-byte check, so validate
+    // just those instead of re-checking every scanned file.
+    let scannedFiles = [];
+    let looseFiles = [];
     let totalSkipped = 0;
 
     for (const p of paths) {
@@ -571,21 +575,22 @@ listen('tauri://drag-drop', async (event) => {
         const [folderFiles, skipped] = await invoke('scan_folder', { path: p });
         if (scanCancelled) return;
         if (folderFiles.length > 0) {
-          allPaths.push(...folderFiles);
+          scannedFiles.push(...folderFiles);
           totalSkipped += skipped;
           continue;
         }
       } catch (_) { /* not a folder — treat as single file */ }
-      allPaths.push(p);
+      looseFiles.push(p);
     }
 
     if (scanCancelled) return;
-    const [valid, skipped] = await invoke('validate_media_files', { paths: allPaths });
+    const [valid, skipped] = await invoke('validate_media_files', { paths: looseFiles });
     if (scanCancelled) return;
-    if (valid.length === 0) {
+    const allValid = scannedFiles.concat(valid);
+    if (allValid.length === 0) {
       showNotice(t('noMediaFound'), 'warning');
     } else {
-      addValidFiles(valid);
+      addValidFiles(allValid);
       showSkipped(skipped + totalSkipped);
     }
   } catch (e) {

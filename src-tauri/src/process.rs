@@ -21,12 +21,12 @@ pub(crate) fn suspend_process(pid: u32) {
         );
         if !handle.is_null() {
             let ntdll = windows_sys::Win32::System::LibraryLoader::GetModuleHandleA(
-                b"ntdll.dll\0".as_ptr(),
+                c"ntdll.dll".as_ptr().cast(),
             );
             if !ntdll.is_null() {
                 let func = windows_sys::Win32::System::LibraryLoader::GetProcAddress(
                     ntdll,
-                    b"NtSuspendProcess\0".as_ptr(),
+                    c"NtSuspendProcess".as_ptr().cast(),
                 );
                 if let Some(f) = func {
                     let suspend: extern "system" fn(*mut std::ffi::c_void) -> i32 =
@@ -48,12 +48,12 @@ pub(crate) fn resume_process(pid: u32) {
         );
         if !handle.is_null() {
             let ntdll = windows_sys::Win32::System::LibraryLoader::GetModuleHandleA(
-                b"ntdll.dll\0".as_ptr(),
+                c"ntdll.dll".as_ptr().cast(),
             );
             if !ntdll.is_null() {
                 let func = windows_sys::Win32::System::LibraryLoader::GetProcAddress(
                     ntdll,
-                    b"NtResumeProcess\0".as_ptr(),
+                    c"NtResumeProcess".as_ptr().cast(),
                 );
                 if let Some(f) = func {
                     let resume: extern "system" fn(*mut std::ffi::c_void) -> i32 =

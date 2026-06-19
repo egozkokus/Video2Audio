@@ -75,7 +75,7 @@ fn parse_audio_info(stderr: &str) -> Option<AudioInfo> {
     let after = line.split("Audio: ").nth(1)?;
 
     let codec_end = after
-        .find(|c: char| c == ' ' || c == ',' || c == '(')
+        .find([' ', ',', '('])
         .unwrap_or(after.len());
     let codec = after[..codec_end].trim().to_lowercase();
 
@@ -129,9 +129,9 @@ pub(crate) fn classify_ffmpeg_error(stderr: &str) -> &'static str {
         "err_corrupt_file"
     } else if lower.contains("permission denied") {
         "err_permission_denied"
-    } else if lower.contains("encoder") && (lower.contains("not found") || lower.contains("unknown")) {
-        "err_codec_not_found"
-    } else if lower.contains("could not find codec")
+    } else if (lower.contains("encoder")
+        && (lower.contains("not found") || lower.contains("unknown")))
+        || lower.contains("could not find codec")
         || lower.contains("codec not currently supported")
     {
         "err_codec_not_found"
