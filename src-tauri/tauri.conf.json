@@ -34,8 +34,8 @@
       "icons/icon.png",
       "icons/icon.ico"
     ],
-    "publisher": "Video2Audio",
-    "copyright": "Copyright © 2024 Video2Audio",
+    "publisher": "Egoz Kokus",
+    "copyright": "Copyright © 2026 Egoz Kokus",
     "category": "Utility",
     "shortDescription": "Convert video files to MP3 & WAV audio",
     "longDescription": "Video2Audio is a fast and easy-to-use tool for extracting audio from video files. Supports MP3 and WAV output formats with customizable bitrate and sample rate settings.",

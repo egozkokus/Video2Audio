@@ -18,7 +18,8 @@ if ($LASTEXITCODE -ne 0) { throw "ffmpeg signing failed" }
 Write-Host "==> Building portable target"
 Push-Location $root
 try {
-    & cargo tauri build --features portable --config $confJson
+    $env:CARGO_BUILD_FEATURES = ""
+    & cargo tauri build --config $confJson -- --features portable
     if ($LASTEXITCODE -ne 0) { throw "cargo tauri build failed" }
 } finally {
     Pop-Location
