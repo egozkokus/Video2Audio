@@ -9,6 +9,8 @@ use crate::AppState;
 use crate::ffmpeg::{classify_ffmpeg_error, parse_duration_secs, probe_audio};
 use crate::process::{resume_process, suspend_process, terminate_process_by_pid};
 
+const MP3_SAMPLE_RATES: [u32; 9] = [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000];
+
 #[derive(Clone, Serialize)]
 pub(crate) struct ProgressPayload {
     id: u32,
@@ -111,11 +113,17 @@ pub async fn convert_file(
                         "-q:a".into(),
                         "0".into(),
                     ]);
+                    // libmp3lame only takes these rates and mono/stereo. Passing
+                    // a 96 kHz rate or 6 channels makes ffmpeg fail, so keep the
+                    // source rate only when MP3 supports it (otherwise ffmpeg
+                    // picks the nearest one) and downmix surround to stereo.
                     if let Some(rate) = src_rate {
-                        args.extend_from_slice(&["-ar".into(), rate.to_string()]);
+                        if MP3_SAMPLE_RATES.contains(&rate) {
+                            args.extend_from_slice(&["-ar".into(), rate.to_string()]);
+                        }
                     }
                     if let Some(ch) = src_channels {
-                        args.extend_from_slice(&["-ac".into(), ch.to_string()]);
+                        args.extend_from_slice(&["-ac".into(), ch.min(2).to_string()]);
                     }
                 }
             }
