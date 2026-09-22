@@ -698,6 +698,9 @@ async function startBatchConversion(jobs, config) {
     // Store batch info so a mid-batch language switch can repaint the UI.
     currentBatchInfo = { currentIndex: i, total: jobs.length, currentName: name };
     updateBatchUI();
+    // With a long file list the progress bar and Pause/Cancel sit below the
+    // window edge; bring them into view once the status line has its text.
+    if (i === 0) progressSection.scrollIntoView({ block: 'nearest' });
 
     progressBar.style.width = '0%';
     progressBar.classList.remove('paused');
@@ -867,6 +870,9 @@ function showDone(status, message, outputPath) {
     doneLocation.classList.add('hidden');
     openFolderBtn.classList.add('hidden');
   }
+
+  // The result sits below the Convert button; make sure it is on screen.
+  doneSection.scrollIntoView({ block: 'nearest' });
 }
 
 openFolderBtn.addEventListener('click', () => {
