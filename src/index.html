@@ -152,12 +152,20 @@
       <div id="done-icon" class="done-icon">&#10003;</div>
       <p id="done-message"></p>
       <p id="done-location" class="done-location hidden"></p>
-      <button id="open-folder-btn" class="done-action hidden" type="button">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-        </svg>
-        <span data-i18n="openFolder"></span>
-      </button>
+      <div id="done-actions" class="done-actions hidden">
+        <button id="open-file-btn" class="done-action hidden" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polygon points="6 4 20 12 6 20 6 4"/>
+          </svg>
+          <span data-i18n="openFile"></span>
+        </button>
+        <button id="open-folder-btn" class="done-action" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span data-i18n="openFolder"></span>
+        </button>
+      </div>
     </div>
   </div>
 
