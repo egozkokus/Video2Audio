@@ -262,7 +262,6 @@ pub async fn convert_file(
         let reader = BufReader::new(stdout);
         let mut current_time: Option<f64> = None;
         let mut current_speed = String::new();
-        let mut got_progress_end = false;
 
         for line in reader.lines().map_while(Result::ok) {
             if line.starts_with("out_time=") {
@@ -298,33 +297,6 @@ pub async fn convert_file(
                         speed: current_speed.clone(),
                     },
                 );
-
-                if line.contains("end") {
-                    got_progress_end = true;
-                    let state = app_clone.state::<AppState>();
-                    *state.child_pid.lock().unwrap() = None;
-                    *state.output_path.lock().unwrap() = None;
-
-                    let success =
-                        std::fs::rename(&temp_path_clone, &output_path_clone).is_ok();
-                    let _ = app_clone.emit(
-                        "conversion-done",
-                        ConvertDonePayload {
-                            id: conversion_id,
-                            success,
-                            message: if success {
-                                "ok".into()
-                            } else {
-                                "err_save_failed".into()
-                            },
-                            output_path: if success {
-                                output_path_clone.clone()
-                            } else {
-                                String::new()
-                            },
-                        },
-                    );
-                }
             }
         }
 
@@ -338,61 +310,63 @@ pub async fn convert_file(
         let was_cancelled =
             *state.cancelled.lock().unwrap() && current_id == conversion_id;
 
-        // If got_progress_end is true we already emitted conversion-done
-        // from the stdout loop — don't emit again, even on a late cancel.
-        if !got_progress_end {
-            if was_cancelled {
+        // The exit code is the only reliable signal: ffmpeg prints
+        // "progress=end" even when it fails (e.g. an encoder rejects its
+        // settings), leaving an empty output file behind.
+        if was_cancelled {
+            let _ = std::fs::remove_file(&temp_path_clone);
+            *state.output_path.lock().unwrap() = None;
+            let _ = app_clone.emit(
+                "conversion-done",
+                ConvertDonePayload {
+                    id: conversion_id,
+                    success: false,
+                    message: "cancelled".into(),
+                    output_path: String::new(),
+                },
+            );
+        } else {
+            let code = status
+                .map(|s| s.code().unwrap_or(-1))
+                .unwrap_or(-1);
+            if code == 0 {
+                *state.output_path.lock().unwrap() = None;
+                let success =
+                    std::fs::rename(&temp_path_clone, &output_path_clone).is_ok();
+                if !success {
+                    let _ = std::fs::remove_file(&temp_path_clone);
+                }
+                let _ = app_clone.emit(
+                    "conversion-done",
+                    ConvertDonePayload {
+                        id: conversion_id,
+                        success,
+                        message: if success {
+                            "ok".into()
+                        } else {
+                            "err_save_failed".into()
+                        },
+                        output_path: if success {
+                            output_path_clone.clone()
+                        } else {
+                            String::new()
+                        },
+                    },
+                );
+            } else {
                 let _ = std::fs::remove_file(&temp_path_clone);
                 *state.output_path.lock().unwrap() = None;
+                let stderr_text = stderr_output.lock().unwrap();
+                let error_key = classify_ffmpeg_error(&stderr_text);
                 let _ = app_clone.emit(
                     "conversion-done",
                     ConvertDonePayload {
                         id: conversion_id,
                         success: false,
-                        message: "cancelled".into(),
+                        message: error_key.into(),
                         output_path: String::new(),
                     },
                 );
-            } else {
-                let code = status
-                    .map(|s| s.code().unwrap_or(-1))
-                    .unwrap_or(-1);
-                if code == 0 {
-                    *state.output_path.lock().unwrap() = None;
-                    let success =
-                        std::fs::rename(&temp_path_clone, &output_path_clone).is_ok();
-                    let _ = app_clone.emit(
-                        "conversion-done",
-                        ConvertDonePayload {
-                            id: conversion_id,
-                            success,
-                            message: if success {
-                                "ok".into()
-                            } else {
-                                "err_save_failed".into()
-                            },
-                            output_path: if success {
-                                output_path_clone.clone()
-                            } else {
-                                String::new()
-                            },
-                        },
-                    );
-                } else {
-                    let _ = std::fs::remove_file(&temp_path_clone);
-                    *state.output_path.lock().unwrap() = None;
-                    let stderr_text = stderr_output.lock().unwrap();
-                    let error_key = classify_ffmpeg_error(&stderr_text);
-                    let _ = app_clone.emit(
-                        "conversion-done",
-                        ConvertDonePayload {
-                            id: conversion_id,
-                            success: false,
-                            message: error_key.into(),
-                            output_path: String::new(),
-                        },
-                    );
-                }
             }
         }
     });
