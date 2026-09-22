@@ -153,7 +153,7 @@ function applyLanguage() {
   // Re-render done-location since it uses a string template.
   if (lastOutputPath && !doneLocation.classList.contains('hidden')) {
     const folder = lastOutputPath.replace(/[\\/][^\\/]+$/, '');
-    doneLocation.textContent = t('savedTo', { folder });
+    doneLocation.textContent = t('savedTo', { folder: ltrPath(folder) });
   }
 }
 
@@ -302,6 +302,12 @@ function getFileName(path) {
 function getBaseName(name) {
   const dot = name.lastIndexOf('.');
   return dot > 0 ? name.substring(0, dot) : name;
+}
+
+// Show a path left-to-right inside Hebrew text: isolate it (LRI...PDI) and put
+// an LRM after each separator so Hebrew folder names keep their order.
+function ltrPath(p) {
+  return '\u2066' + p.replace(/[\\/]/g, '$&\u200E') + '\u2069';
 }
 
 function updateFileCount() {
@@ -860,7 +866,7 @@ function showDone(status, message, outputPath) {
   lastOutputPath = (status === 'success' && outputPath) ? outputPath : null;
   if (lastOutputPath) {
     const folder = lastOutputPath.replace(/[\\/][^\\/]+$/, '');
-    doneLocation.textContent = t('savedTo', { folder });
+    doneLocation.textContent = t('savedTo', { folder: ltrPath(folder) });
     doneLocation.classList.remove('hidden');
     openFolderBtn.classList.remove('hidden');
   } else {
