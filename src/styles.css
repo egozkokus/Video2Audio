@@ -585,7 +585,6 @@ select:focus {
   font-weight: 500;
   color: var(--text);
   text-align: center;
-  direction: ltr;
 }
 
 .progress-bar-container {

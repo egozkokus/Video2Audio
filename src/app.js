@@ -165,7 +165,9 @@ function updateBatchUI() {
   const { currentIndex, total, currentName } = currentBatchInfo;
   const isBatch = total > 1;
   if (isBatch) {
-    const text = t('convertingBatch', { current: currentIndex + 1, total, name: currentName });
+    // Isolate the file name (FSI...PDI) so its own direction can't reorder the
+    // words around it: "Converting 2/5:" keeps its place for any file name.
+    const text = t('convertingBatch', { current: currentIndex + 1, total, name: '\u2068' + currentName + '\u2069' });
     // batchStatus stays accurate even when paused (file name still relevant);
     // the convert button reflects paused state which overrides the text.
     batchStatus.textContent = text;
