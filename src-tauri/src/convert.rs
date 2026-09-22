@@ -128,10 +128,23 @@ pub async fn convert_file(
                 }
             }
             "wav" => {
-                if src_codec.starts_with("pcm_") {
+                // The WAV muxer only takes little-endian PCM. Big-endian PCM
+                // (common in camera .mov/.mp4 files) is re-encoded instead,
+                // keeping its bit depth.
+                let wav_copy = matches!(
+                    src_codec,
+                    "pcm_s16le" | "pcm_s24le" | "pcm_s32le" | "pcm_s64le" | "pcm_f32le"
+                        | "pcm_f64le" | "pcm_u8" | "pcm_alaw" | "pcm_mulaw"
+                );
+                let encoder = match src_codec {
+                    "pcm_s24be" => "pcm_s24le",
+                    "pcm_s32be" => "pcm_s32le",
+                    _ => "pcm_s16le",
+                };
+                if wav_copy {
                     args.extend_from_slice(&["-c:a".into(), "copy".into()]);
                 } else {
-                    args.extend_from_slice(&["-codec:a".into(), "pcm_s16le".into()]);
+                    args.extend_from_slice(&["-codec:a".into(), encoder.into()]);
                     if let Some(rate) = src_rate {
                         args.extend_from_slice(&["-ar".into(), rate.to_string()]);
                     }
