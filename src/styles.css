@@ -357,8 +357,14 @@ header h1 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  direction: ltr;
+  /* Each name takes its own direction, so a Hebrew name reads right-to-left
+     and loses its END (not its beginning) to the ellipsis. */
+  unicode-bidi: plaintext;
   text-align: left;
+}
+
+[dir="rtl"] .file-item-name {
+  text-align: right;
 }
 
 .file-item-remove {
