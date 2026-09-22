@@ -123,7 +123,13 @@ pub(crate) fn parse_duration_secs(s: &str) -> Option<f64> {
 
 pub(crate) fn classify_ffmpeg_error(stderr: &str) -> &'static str {
     let lower = stderr.to_lowercase();
-    if lower.contains("no such file or directory") || lower.contains("does not exist") {
+    // Exact ffmpeg messages first: the broader checks below also match words
+    // from the banner and metadata (e.g. "encoder" + "Unknown Artist").
+    if lower.contains("matches no streams") {
+        "err_no_audio"
+    } else if lower.contains("no decoder found") {
+        "err_codec_not_found"
+    } else if lower.contains("no such file or directory") || lower.contains("does not exist") {
         "err_file_not_found"
     } else if lower.contains("invalid data found") || lower.contains("invalid data") {
         "err_corrupt_file"
