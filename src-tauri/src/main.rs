@@ -87,6 +87,26 @@ fn build_source_output_paths(input_paths: Vec<String>, extension: String) -> Vec
     outputs
 }
 
+/// Open a converted file with the user's default player.
+/// Only an existing .mp3/.wav is accepted, so this can't launch anything else.
+#[tauri::command]
+fn open_output_file(path: String) {
+    use std::os::windows::process::CommandExt;
+    let p = std::path::Path::new(&path);
+    let is_audio = p
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("mp3") || e.eq_ignore_ascii_case("wav"));
+    if !is_audio || !p.is_file() {
+        return;
+    }
+    // Quote the path ourselves: raw_arg passes it to Explorer untouched.
+    let _ = std::process::Command::new("explorer.exe")
+        .raw_arg(format!("\"{}\"", path))
+        .creation_flags(0x08000000)
+        .spawn();
+}
+
 fn cleanup_on_exit(app: &tauri::AppHandle) {
     let state = app.state::<AppState>();
     let pid = state.child_pid.lock().unwrap().take();
@@ -205,7 +225,8 @@ fn main() {
             media::cancel_scan,
             build_output_path,
             build_source_output_paths,
-            open_in_explorer
+            open_in_explorer,
+            open_output_file
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
