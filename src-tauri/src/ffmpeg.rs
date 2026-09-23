@@ -123,26 +123,33 @@ pub(crate) fn parse_duration_secs(s: &str) -> Option<f64> {
 
 pub(crate) fn classify_ffmpeg_error(stderr: &str) -> &'static str {
     let lower = stderr.to_lowercase();
-    // Exact ffmpeg messages first: the broader checks below also match words
-    // from the banner and metadata (e.g. "encoder" + "Unknown Artist").
+    // Exact messages first (the input's, then the output's): the broader checks
+    // below also match words from the banner and metadata (e.g. "encoder" +
+    // "Unknown Artist"), and decode warnings.
     if lower.contains("matches no streams") {
         "err_no_audio"
     } else if lower.contains("no decoder found") {
         "err_codec_not_found"
+    } else if lower.contains("no space left") || lower.contains("not enough space") {
+        "err_disk_full"
+    } else if lower.contains("permission denied") {
+        "err_permission_denied"
+    } else if lower.contains("] error opening output ") {
+        // Only the muxer's own "[out#0/mp3 @ ...] Error opening output <path>"
+        // line: e.g. the chosen folder was deleted, or the USB stick was
+        // removed. The general "Error opening output file(s)" lines also
+        // follow a source whose decoder would not open.
+        "err_save_failed"
     } else if lower.contains("no such file or directory") || lower.contains("does not exist") {
         "err_file_not_found"
     } else if lower.contains("invalid data found") || lower.contains("invalid data") {
         "err_corrupt_file"
-    } else if lower.contains("permission denied") {
-        "err_permission_denied"
     } else if (lower.contains("encoder")
         && (lower.contains("not found") || lower.contains("unknown")))
         || lower.contains("could not find codec")
         || lower.contains("codec not currently supported")
     {
         "err_codec_not_found"
-    } else if lower.contains("no space left") || lower.contains("not enough space") {
-        "err_disk_full"
     } else if lower.contains("does not contain any stream")
         || lower.contains("output file is empty")
         || lower.contains("output file #0 does not contain any stream")
