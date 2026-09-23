@@ -9,6 +9,8 @@ use crate::AppState;
 use crate::ffmpeg::{classify_ffmpeg_error, parse_duration_secs, probe_audio};
 use crate::process::{resume_process, suspend_process, terminate_process_by_pid};
 
+const MP3_SAMPLE_RATES: [u32; 9] = [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000];
+
 #[derive(Clone, Serialize)]
 pub(crate) struct ProgressPayload {
     id: u32,
@@ -84,8 +86,12 @@ pub async fn convert_file(
 
     // "-map 0:a:0" selects the first audio track only. Files with multiple
     // audio streams (e.g. multi-language) extract track 0 by design.
+    // "-abort_on empty_output": an audio track with no packets would otherwise
+    // end with exit code 0 and an empty file ("Output file is empty").
     let mut args: Vec<String> = vec![
         "-y".into(),
+        "-abort_on".into(),
+        "empty_output".into(),
         "-threads".into(),
         "0".into(),
         "-i".into(),
@@ -111,19 +117,38 @@ pub async fn convert_file(
                         "-q:a".into(),
                         "0".into(),
                     ]);
+                    // libmp3lame only takes these rates and mono/stereo. Passing
+                    // a 96 kHz rate or 6 channels makes ffmpeg fail, so keep the
+                    // source rate only when MP3 supports it (otherwise ffmpeg
+                    // picks the nearest one) and downmix surround to stereo.
                     if let Some(rate) = src_rate {
-                        args.extend_from_slice(&["-ar".into(), rate.to_string()]);
+                        if MP3_SAMPLE_RATES.contains(&rate) {
+                            args.extend_from_slice(&["-ar".into(), rate.to_string()]);
+                        }
                     }
                     if let Some(ch) = src_channels {
-                        args.extend_from_slice(&["-ac".into(), ch.to_string()]);
+                        args.extend_from_slice(&["-ac".into(), ch.min(2).to_string()]);
                     }
                 }
             }
             "wav" => {
-                if src_codec.starts_with("pcm_") {
+                // The WAV muxer only takes little-endian PCM. Big-endian PCM
+                // (common in camera .mov/.mp4 files) is re-encoded instead,
+                // keeping its bit depth.
+                let wav_copy = matches!(
+                    src_codec,
+                    "pcm_s16le" | "pcm_s24le" | "pcm_s32le" | "pcm_s64le" | "pcm_f32le"
+                        | "pcm_f64le" | "pcm_u8" | "pcm_alaw" | "pcm_mulaw"
+                );
+                let encoder = match src_codec {
+                    "pcm_s24be" => "pcm_s24le",
+                    "pcm_s32be" => "pcm_s32le",
+                    _ => "pcm_s16le",
+                };
+                if wav_copy {
                     args.extend_from_slice(&["-c:a".into(), "copy".into()]);
                 } else {
-                    args.extend_from_slice(&["-codec:a".into(), "pcm_s16le".into()]);
+                    args.extend_from_slice(&["-codec:a".into(), encoder.into()]);
                     if let Some(rate) = src_rate {
                         args.extend_from_slice(&["-ar".into(), rate.to_string()]);
                     }
@@ -241,7 +266,6 @@ pub async fn convert_file(
         let reader = BufReader::new(stdout);
         let mut current_time: Option<f64> = None;
         let mut current_speed = String::new();
-        let mut got_progress_end = false;
 
         for line in reader.lines().map_while(Result::ok) {
             if line.starts_with("out_time=") {
@@ -277,33 +301,6 @@ pub async fn convert_file(
                         speed: current_speed.clone(),
                     },
                 );
-
-                if line.contains("end") {
-                    got_progress_end = true;
-                    let state = app_clone.state::<AppState>();
-                    *state.child_pid.lock().unwrap() = None;
-                    *state.output_path.lock().unwrap() = None;
-
-                    let success =
-                        std::fs::rename(&temp_path_clone, &output_path_clone).is_ok();
-                    let _ = app_clone.emit(
-                        "conversion-done",
-                        ConvertDonePayload {
-                            id: conversion_id,
-                            success,
-                            message: if success {
-                                "ok".into()
-                            } else {
-                                "err_save_failed".into()
-                            },
-                            output_path: if success {
-                                output_path_clone.clone()
-                            } else {
-                                String::new()
-                            },
-                        },
-                    );
-                }
             }
         }
 
@@ -317,61 +314,63 @@ pub async fn convert_file(
         let was_cancelled =
             *state.cancelled.lock().unwrap() && current_id == conversion_id;
 
-        // If got_progress_end is true we already emitted conversion-done
-        // from the stdout loop — don't emit again, even on a late cancel.
-        if !got_progress_end {
-            if was_cancelled {
+        // The exit code is the only reliable signal: ffmpeg prints
+        // "progress=end" even when it fails (e.g. an encoder rejects its
+        // settings), leaving an empty output file behind.
+        if was_cancelled {
+            let _ = std::fs::remove_file(&temp_path_clone);
+            *state.output_path.lock().unwrap() = None;
+            let _ = app_clone.emit(
+                "conversion-done",
+                ConvertDonePayload {
+                    id: conversion_id,
+                    success: false,
+                    message: "cancelled".into(),
+                    output_path: String::new(),
+                },
+            );
+        } else {
+            let code = status
+                .map(|s| s.code().unwrap_or(-1))
+                .unwrap_or(-1);
+            if code == 0 {
+                *state.output_path.lock().unwrap() = None;
+                let success =
+                    std::fs::rename(&temp_path_clone, &output_path_clone).is_ok();
+                if !success {
+                    let _ = std::fs::remove_file(&temp_path_clone);
+                }
+                let _ = app_clone.emit(
+                    "conversion-done",
+                    ConvertDonePayload {
+                        id: conversion_id,
+                        success,
+                        message: if success {
+                            "ok".into()
+                        } else {
+                            "err_save_failed".into()
+                        },
+                        output_path: if success {
+                            output_path_clone.clone()
+                        } else {
+                            String::new()
+                        },
+                    },
+                );
+            } else {
                 let _ = std::fs::remove_file(&temp_path_clone);
                 *state.output_path.lock().unwrap() = None;
+                let stderr_text = stderr_output.lock().unwrap();
+                let error_key = classify_ffmpeg_error(&stderr_text);
                 let _ = app_clone.emit(
                     "conversion-done",
                     ConvertDonePayload {
                         id: conversion_id,
                         success: false,
-                        message: "cancelled".into(),
+                        message: error_key.into(),
                         output_path: String::new(),
                     },
                 );
-            } else {
-                let code = status
-                    .map(|s| s.code().unwrap_or(-1))
-                    .unwrap_or(-1);
-                if code == 0 {
-                    *state.output_path.lock().unwrap() = None;
-                    let success =
-                        std::fs::rename(&temp_path_clone, &output_path_clone).is_ok();
-                    let _ = app_clone.emit(
-                        "conversion-done",
-                        ConvertDonePayload {
-                            id: conversion_id,
-                            success,
-                            message: if success {
-                                "ok".into()
-                            } else {
-                                "err_save_failed".into()
-                            },
-                            output_path: if success {
-                                output_path_clone.clone()
-                            } else {
-                                String::new()
-                            },
-                        },
-                    );
-                } else {
-                    let _ = std::fs::remove_file(&temp_path_clone);
-                    *state.output_path.lock().unwrap() = None;
-                    let stderr_text = stderr_output.lock().unwrap();
-                    let error_key = classify_ffmpeg_error(&stderr_text);
-                    let _ = app_clone.emit(
-                        "conversion-done",
-                        ConvertDonePayload {
-                            id: conversion_id,
-                            success: false,
-                            message: error_key.into(),
-                            output_path: String::new(),
-                        },
-                    );
-                }
             }
         }
     });
