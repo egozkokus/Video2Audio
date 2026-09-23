@@ -144,18 +144,18 @@ pub(crate) fn classify_ffmpeg_error(stderr: &str) -> &'static str {
         "err_file_not_found"
     } else if lower.contains("invalid data found") || lower.contains("invalid data") {
         "err_corrupt_file"
-    } else if (lower.contains("encoder")
-        && (lower.contains("not found") || lower.contains("unknown")))
-        || lower.contains("could not find codec")
-        || lower.contains("codec not currently supported")
-    {
-        "err_codec_not_found"
     } else if lower.contains("does not contain any stream")
         || lower.contains("output file is empty")
         || lower.contains("output file #0 does not contain any stream")
         || lower.contains("could not find tag for codec")
     {
         "err_no_audio"
+    } else if (lower.contains("encoder")
+        && (lower.contains("not found") || lower.contains("unknown")))
+        || lower.contains("could not find codec")
+        || lower.contains("codec not currently supported")
+    {
+        "err_codec_not_found"
     } else {
         "err_conversion_failed"
     }

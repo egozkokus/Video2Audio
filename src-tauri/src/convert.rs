@@ -86,8 +86,12 @@ pub async fn convert_file(
 
     // "-map 0:a:0" selects the first audio track only. Files with multiple
     // audio streams (e.g. multi-language) extract track 0 by design.
+    // "-abort_on empty_output": an audio track with no packets would otherwise
+    // end with exit code 0 and an empty file ("Output file is empty").
     let mut args: Vec<String> = vec![
         "-y".into(),
+        "-abort_on".into(),
+        "empty_output".into(),
         "-threads".into(),
         "0".into(),
         "-i".into(),
