@@ -1,6 +1,8 @@
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
-const { open, save } = window.__TAURI__.dialog;
+// The plugin's own confirm: the window.confirm it installs calls a command the
+// plugin no longer has (2.7), so it neither shows nor waits.
+const { open, save, confirm } = window.__TAURI__.dialog;
 
 // ============ i18n ============
 const i18n = {
@@ -521,9 +523,13 @@ dropZone.addEventListener('click', (e) => {
 addMoreBtn.addEventListener('click', addFiles);
 addFolderBtn.addEventListener('click', addFolder);
 
-clearAllBtn.addEventListener('click', () => {
+clearAllBtn.addEventListener('click', async () => {
   if (isConverting) return;
-  if (selectedFiles.length > 1 && !confirm(t('confirmClearAll', { n: selectedFiles.length }))) return;
+  // The dialog takes its direction from Windows, not from the app. A closing
+  // RLM/LRM keeps the "?" at the end of the question in either language.
+  const question = t('confirmClearAll', { n: selectedFiles.length }) + (currentLang === 'he' ? '\u200F' : '\u200E');
+  if (selectedFiles.length > 1 && !(await confirm(question))) return;
+  if (isConverting) return; // a conversion that was being prepared started meanwhile
   selectedFiles = [];
   updateUI();
 });
