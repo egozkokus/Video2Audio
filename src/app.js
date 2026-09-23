@@ -644,18 +644,15 @@ convertBtn.addEventListener('click', async () => {
       const folder = await open({ directory: true, title: t('selectOutputFolder') });
       if (!folder) return;
 
-      // Deduplicate output names to avoid overwriting
-      const usedNames = new Map();
-      jobs = [];
-      for (const input of selectedFiles) {
-        const base = getBaseName(getFileName(input));
-        const key = base.toLowerCase();
-        const count = usedNames.get(key) || 0;
-        usedNames.set(key, count + 1);
-        const uniqueBase = count === 0 ? base : base + ' (' + (count + 1) + ')';
-        const output = await invoke('build_output_path', { folder, name: uniqueBase, extension: config.format });
-        jobs.push({ input, output });
-      }
+      // Same naming as above, inside the chosen folder: Rust skips names that
+      // already exist there when the batch starts, or earlier in this batch.
+      const inputs = selectedFiles.slice();
+      const outputs = await invoke('build_source_output_paths', {
+        inputPaths: inputs,
+        extension: config.format,
+        folder,
+      });
+      jobs = inputs.map((input, i) => ({ input, output: outputs[i] }));
     }
 
     // startBatchConversion synchronously sets isConverting=true before its
