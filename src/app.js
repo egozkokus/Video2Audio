@@ -14,7 +14,7 @@ const i18n = {
     addMore: 'Add Files',
     addFolder: 'Add Folder',
     clearAll: 'Clear All',
-    confirmClearAll: 'Clear all {n} files?',
+    confirmClearAll: 'Remove all {n} files from the list?',
     remove: 'Remove',
     format: 'Format',
     bitrate: 'Bitrate',
@@ -69,7 +69,7 @@ const i18n = {
     addMore: '\u05D4\u05D5\u05E1\u05E3 \u05E7\u05D1\u05E6\u05D9\u05DD',
     addFolder: '\u05D4\u05D5\u05E1\u05E3 \u05EA\u05D9\u05E7\u05D9\u05D9\u05D4',
     clearAll: '\u05E0\u05E7\u05D4 \u05D4\u05DB\u05DC',
-    confirmClearAll: '\u05DC\u05DE\u05D7\u05D5\u05E7 \u05D0\u05EA \u05DB\u05DC {n} \u05D4\u05E7\u05D1\u05E6\u05D9\u05DD?',
+    confirmClearAll: '\u05DC\u05D4\u05E1\u05D9\u05E8 \u05D0\u05EA \u05DB\u05DC {n} \u05D4\u05E7\u05D1\u05E6\u05D9\u05DD \u05DE\u05D4\u05E8\u05E9\u05D9\u05DE\u05D4?',
     remove: '\u05D4\u05E1\u05E8',
     format: '\u05E4\u05D5\u05E8\u05DE\u05D8',
     bitrate: '\u05E7\u05E6\u05D1 \u05E1\u05D9\u05D1\u05D9\u05D5\u05EA',
@@ -87,8 +87,8 @@ const i18n = {
     pause: '\u05D4\u05E9\u05D4\u05D4',
     resume: '\u05D4\u05DE\u05E9\u05DA',
     cancel: '\u05D1\u05D9\u05D8\u05D5\u05DC',
-    complete: '!\u05D4\u05D4\u05DE\u05E8\u05D4 \u05D4\u05D5\u05E9\u05DC\u05DE\u05D4',
-    allComplete: '!\u05DB\u05DC \u05D4\u05D4\u05DE\u05E8\u05D5\u05EA \u05D4\u05D5\u05E9\u05DC\u05DE\u05D5',
+    complete: '\u05D4\u05D4\u05DE\u05E8\u05D4 \u05D4\u05D5\u05E9\u05DC\u05DE\u05D4!',
+    allComplete: '\u05DB\u05DC \u05D4\u05D4\u05DE\u05E8\u05D5\u05EA \u05D4\u05D5\u05E9\u05DC\u05DE\u05D5!',
     cancelled: '\u05D4\u05D4\u05DE\u05E8\u05D4 \u05D1\u05D5\u05D8\u05DC\u05D4',
     langLabel: 'EN',
     filterName: '\u05D5\u05D9\u05D3\u05D0\u05D5/\u05D0\u05D5\u05D3\u05D9\u05D5',
@@ -153,7 +153,7 @@ function applyLanguage() {
   // Re-render done-location since it uses a string template.
   if (lastOutputPath && !doneLocation.classList.contains('hidden')) {
     const folder = lastOutputPath.replace(/[\\/][^\\/]+$/, '');
-    doneLocation.textContent = t('savedTo', { folder });
+    doneLocation.textContent = t('savedTo', { folder: ltrPath(folder) });
   }
 }
 
@@ -165,7 +165,9 @@ function updateBatchUI() {
   const { currentIndex, total, currentName } = currentBatchInfo;
   const isBatch = total > 1;
   if (isBatch) {
-    const text = t('convertingBatch', { current: currentIndex + 1, total, name: currentName });
+    // Isolate the file name (FSI...PDI) so its own direction can't reorder the
+    // words around it: "Converting 2/5:" keeps its place for any file name.
+    const text = t('convertingBatch', { current: currentIndex + 1, total, name: '\u2068' + currentName + '\u2069' });
     // batchStatus stays accurate even when paused (file name still relevant);
     // the convert button reflects paused state which overrides the text.
     batchStatus.textContent = text;
@@ -302,6 +304,12 @@ function getFileName(path) {
 function getBaseName(name) {
   const dot = name.lastIndexOf('.');
   return dot > 0 ? name.substring(0, dot) : name;
+}
+
+// Show a path left-to-right inside Hebrew text: isolate it (LRI...PDI) and put
+// an LRM after each separator so Hebrew folder names keep their order.
+function ltrPath(p) {
+  return '\u2066' + p.replace(/[\\/]/g, '$&\u200E') + '\u2069';
 }
 
 function updateFileCount() {
@@ -860,7 +868,7 @@ function showDone(status, message, outputPath) {
   lastOutputPath = (status === 'success' && outputPath) ? outputPath : null;
   if (lastOutputPath) {
     const folder = lastOutputPath.replace(/[\\/][^\\/]+$/, '');
-    doneLocation.textContent = t('savedTo', { folder });
+    doneLocation.textContent = t('savedTo', { folder: ltrPath(folder) });
     doneLocation.classList.remove('hidden');
     openFolderBtn.classList.remove('hidden');
   } else {
