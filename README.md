@@ -11,6 +11,7 @@ Supports MP3 and WAV output with configurable bitrate and sample rate. Drag-and-
 - Pause, resume, cancel
 - Drag-and-drop, including media files dropped onto the portable `.exe`
 - Load media paths passed on the command line without starting conversion
+- Explorer context menu opens media in the normal conversion window
 - Two distribution modes: NSIS installer and standalone portable `.exe`
 
 ## Opening files from Explorer or the command line
@@ -24,6 +25,11 @@ video2audio.exe "C:\Media\lesson one.mp4" "C:\Media\lesson two.mkv"
 Files are validated and added to the list. Choose the output settings and press
 Convert when ready. The installer does not automatically replace video player
 file associations.
+
+The installed version also adds a localized **Convert with Video2Audio...**
+context-menu action for supported inputs other than MP3. It opens the same
+window with the selected file loaded; it does not silently write an MP3.
+The legacy `--convert <path>` command now opens this window as well.
 
 ## Requirements (development)
 

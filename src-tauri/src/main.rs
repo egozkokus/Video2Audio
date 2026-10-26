@@ -122,59 +122,7 @@ fn cleanup_on_exit(app: &tauri::AppHandle) {
     }
 }
 
-/// Headless conversion triggered by Windows context menu (installer only).
-/// Launched as: Video2Audio.exe --convert "C:\path\to\file.mkv"
-/// Converts to MP3 192kbps / 44100Hz in the same folder, then exits.
-#[cfg(not(feature = "portable"))]
-fn try_context_menu_convert() -> bool {
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() != 3 || args[1] != "--convert" {
-        return false;
-    }
-
-    let input = PathBuf::from(&args[2]);
-    if !input.is_file() {
-        return true;
-    }
-
-    let parent = input.parent().unwrap_or(std::path::Path::new("."));
-    let stem = input.file_stem().unwrap_or_default().to_string_lossy();
-
-    // Avoid overwriting the source when it is already .mp3
-    let output = if input.extension().map(|e| e.to_ascii_lowercase()) == Some(std::ffi::OsString::from("mp3")) {
-        parent.join(format!("{} (192kbps).mp3", stem))
-    } else {
-        parent.join(format!("{}.mp3", stem))
-    };
-
-    let ffmpeg_path = std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|d| d.join("ffmpeg.exe")))
-        .unwrap_or_else(|| PathBuf::from("ffmpeg.exe"));
-
-    use std::os::windows::process::CommandExt;
-    let _ = std::process::Command::new(&ffmpeg_path)
-        .args([
-            "-y", "-threads", "0",
-            "-i", &input.to_string_lossy(),
-            "-map", "0:a:0",
-            "-codec:a", "libmp3lame",
-            "-b:a", "192k",
-            "-ar", "44100",
-            &output.to_string_lossy(),
-        ])
-        .creation_flags(0x08000000)
-        .status();
-
-    true
-}
-
 fn main() {
-    #[cfg(not(feature = "portable"))]
-    if try_context_menu_convert() {
-        return;
-    }
-
     #[cfg(feature = "portable")]
     let ffmpeg_path = ffmpeg::extract_ffmpeg_to_temp().expect("Fatal: failed to extract ffmpeg");
 
