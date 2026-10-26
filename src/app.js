@@ -924,3 +924,25 @@ openFolderBtn.addEventListener('click', () => {
   if (!lastOutputPath) return;
   invoke('open_in_explorer', { path: lastOutputPath });
 });
+
+// Pull startup paths only after all UI state and event handlers are ready.
+// Loading files never starts conversion; the user keeps control of settings.
+async function loadStartupFiles() {
+  // Do not let a user-started batch race with startup validation and updateUI.
+  isPreparingConvert = true;
+  try {
+    const paths = await invoke('get_startup_files');
+    if (paths.length === 0) return;
+    const [valid, skipped] = await invoke('validate_media_files', { paths });
+    addValidFiles(valid);
+    showSkipped(skipped);
+  } catch (e) {
+    console.error('Startup file loading error:', e);
+    showNotice(t('err_load_failed'), 'warning');
+  } finally {
+    isPreparingConvert = false;
+    convertBtn.disabled = selectedFiles.length === 0;
+  }
+}
+
+loadStartupFiles();
