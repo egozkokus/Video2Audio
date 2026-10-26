@@ -22,13 +22,6 @@ pub(crate) struct AppState {
     pub(crate) scan_cancelled: Arc<AtomicBool>,
 }
 
-#[tauri::command]
-fn build_output_path(folder: String, name: String, extension: String) -> String {
-    let mut path = PathBuf::from(folder);
-    path.push(format!("{}.{}", name, extension));
-    path.to_string_lossy().to_string()
-}
-
 /// Open a file's parent folder in Explorer with the file highlighted.
 /// If the path is a folder (or the file vanished), opens the folder itself.
 #[tauri::command]
@@ -46,10 +39,15 @@ fn open_in_explorer(path: String) {
         .spawn();
 }
 
-/// Build an output path next to each input file, auto-renaming on collision
+/// Build an output path for each input file, auto-renaming on collision
 /// against both on-disk files and other paths in this same batch.
+/// Outputs go next to each input, or into `folder` when one is given.
 #[tauri::command]
-fn build_source_output_paths(input_paths: Vec<String>, extension: String) -> Vec<String> {
+fn build_source_output_paths(
+    input_paths: Vec<String>,
+    extension: String,
+    folder: Option<String>,
+) -> Vec<String> {
     use std::collections::HashSet;
     let mut outputs = Vec::with_capacity(input_paths.len());
     // Track in-batch claims case-insensitively (Windows filesystem semantics).
@@ -57,7 +55,10 @@ fn build_source_output_paths(input_paths: Vec<String>, extension: String) -> Vec
 
     for input_path in input_paths {
         let input = std::path::Path::new(&input_path);
-        let parent = input.parent().unwrap_or(std::path::Path::new("."));
+        let parent = match &folder {
+            Some(f) => std::path::Path::new(f),
+            None => input.parent().unwrap_or(std::path::Path::new(".")),
+        };
         let stem = input
             .file_stem()
             .and_then(|s| s.to_str())
@@ -203,7 +204,6 @@ fn main() {
             media::validate_media_files,
             media::scan_folder,
             media::cancel_scan,
-            build_output_path,
             build_source_output_paths,
             open_in_explorer
         ])
