@@ -26,6 +26,7 @@ const i18n = {
     saveNextToSource: 'Save next to source',
     customLocationHint: 'You\'ll pick a location each time',
     openFolder: 'Open folder',
+    openFile: 'Open file',
     savedTo: 'Saved to {folder}',
     dropToAdd: 'Drop here to add',
     convert: 'Convert',
@@ -81,6 +82,7 @@ const i18n = {
     saveNextToSource: '\u05E9\u05DE\u05D5\u05E8 \u05DC\u05D9\u05D3 \u05D4\u05E7\u05D5\u05D1\u05E5 \u05D4\u05DE\u05E7\u05D5\u05E8\u05D9',
     customLocationHint: '\u05D1\u05DB\u05DC \u05D4\u05DE\u05E8\u05D4 \u05EA\u05D5\u05E4\u05D9\u05E2 \u05E9\u05D0\u05DC\u05D4 \u05DC\u05D1\u05D7\u05D9\u05E8\u05EA \u05DE\u05D9\u05E7\u05D5\u05DD',
     openFolder: '\u05E4\u05EA\u05D7 \u05EA\u05D9\u05E7\u05D9\u05D9\u05D4',
+    openFile: '\u05E4\u05EA\u05D7 \u05E7\u05D5\u05D1\u05E5',
     savedTo: '\u05E0\u05E9\u05DE\u05E8 \u05D1-{folder}',
     dropToAdd: '\u05E9\u05D7\u05E8\u05E8 \u05DB\u05D0\u05DF \u05DC\u05D4\u05D5\u05E1\u05E4\u05D4',
     convert: '\u05D4\u05DE\u05E8',
@@ -212,6 +214,8 @@ const doneSection = document.getElementById('done-section');
 const doneIcon = document.getElementById('done-icon');
 const doneMessage = document.getElementById('done-message');
 const doneLocation = document.getElementById('done-location');
+const doneActions = document.getElementById('done-actions');
+const openFileBtn = document.getElementById('open-file-btn');
 const openFolderBtn = document.getElementById('open-folder-btn');
 const dragOverlay = document.getElementById('drag-overlay');
 const themeToggle = document.getElementById('theme-toggle');
@@ -784,11 +788,11 @@ async function startBatchConversion(jobs, config) {
     showDone('cancelled', t('cancelled'));
   } else if (failedCount === 0) {
     const msg = jobs.length > 1 ? t('allComplete') : t('complete');
-    showDone('success', msg, firstSuccessOutput);
+    showDone('success', msg, firstSuccessOutput, successCount === 1);
   } else if (successCount === 0) {
     showDone('error', t('batchErrors', { n: failedCount }));
   } else {
-    showDone('success', t('batchPartial', { success: successCount, failed: failedCount }), firstSuccessOutput);
+    showDone('success', t('batchPartial', { success: successCount, failed: failedCount }), firstSuccessOutput, successCount === 1);
   }
 }
 
@@ -881,7 +885,7 @@ cancelBtn.addEventListener('click', async () => {
 });
 
 // ============ Done ============
-function showDone(status, message, outputPath) {
+function showDone(status, message, outputPath, singleFile) {
   isConverting = false;
   isPaused = false;
   isCancelled = false;
@@ -904,21 +908,28 @@ function showDone(status, message, outputPath) {
   }
   doneMessage.textContent = message;
 
-  // Show location + open-folder button only on success with a known path.
+  // Show location + open buttons only on success with a known path.
   lastOutputPath = (status === 'success' && outputPath) ? outputPath : null;
   if (lastOutputPath) {
     const folder = lastOutputPath.replace(/[\\/][^\\/]+$/, '');
     doneLocation.textContent = t('savedTo', { folder: ltrPath(folder) });
     doneLocation.classList.remove('hidden');
-    openFolderBtn.classList.remove('hidden');
+    doneActions.classList.remove('hidden');
+    // "The file" is only unambiguous when exactly one file was converted.
+    openFileBtn.classList.toggle('hidden', !singleFile);
   } else {
     doneLocation.classList.add('hidden');
-    openFolderBtn.classList.add('hidden');
+    doneActions.classList.add('hidden');
   }
 
   // The result sits below the Convert button; make sure it is on screen.
   doneSection.scrollIntoView({ block: 'nearest' });
 }
+
+openFileBtn.addEventListener('click', () => {
+  if (!lastOutputPath) return;
+  invoke('open_output_file', { path: lastOutputPath });
+});
 
 openFolderBtn.addEventListener('click', () => {
   if (!lastOutputPath) return;

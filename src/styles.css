@@ -713,6 +713,12 @@ select:focus {
   line-height: 1.4;
 }
 
+.done-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
 .done-action {
   display: inline-flex;
   align-items: center;
