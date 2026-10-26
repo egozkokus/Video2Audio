@@ -42,8 +42,19 @@ body {
   justify-content: center;
   align-items: center;
   user-select: none;
-  overflow: hidden;
+  /* Scroll instead of clipping when a state is taller than the window
+     (long file list while converting, the done card, a small window). */
+  overflow-x: hidden;
+  overflow-y: auto;
   transition: background 0.3s, color 0.3s;
+}
+
+html {
+  scrollbar-width: thin;
+  /* Visible enough to hint that the page continues; the gutter is reserved on
+     both sides so the centred column does not shift when the bar appears. */
+  scrollbar-color: var(--text-dim) transparent;
+  scrollbar-gutter: stable both-edges;
 }
 
 /* Smooth theme transitions on static text + bordered surfaces */
@@ -64,7 +75,7 @@ select:focus-visible,
 .app {
   width: 100%;
   max-width: 580px;
-  padding: 32px 28px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -137,7 +148,7 @@ header h1 {
 .drop-zone {
   border: 2px dashed var(--border);
   border-radius: var(--radius);
-  padding: 36px 20px;
+  padding: 28px 20px;
   text-align: center;
   transition: all 0.25s ease;
   background: var(--surface);
@@ -470,13 +481,20 @@ select:focus {
   border-color: var(--accent);
 }
 
-/* Max Quality */
+/* Max Quality + Save-next-to-source toggles, side by side */
+.quality-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: -6px;
+}
+
 .quality-mode {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  margin-top: -6px;
 }
 
 .quality-toggle-btn {
@@ -578,6 +596,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  scroll-margin-bottom: 24px;
 }
 
 .batch-status {
@@ -661,6 +680,7 @@ select:focus {
 
 /* Done */
 .done-section {
+  scroll-margin-bottom: 8px;
   text-align: center;
   padding: 16px;
   display: flex;
