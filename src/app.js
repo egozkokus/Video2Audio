@@ -681,10 +681,10 @@ function removeFinished(paths) {
   dropZone.classList.toggle('hidden', hasFiles);
 }
 
-// Failures caused by the machine or the output location, not by the file.
-// Those files stay in the list, so after fixing the cause (free space, another
-// folder, ...) the user presses Convert again and only they are retried.
-const KEEP_ON_FAILURE = new Set(['err_launch_failed', 'err_disk_full', 'err_permission_denied', 'err_save_failed']);
+// Remove only known input-specific failures. Machine/output errors and
+// unrecognized failures stay in the list so the user can fix the cause and
+// retry without having to select the files again.
+const REMOVE_ON_FAILURE = new Set(['err_no_audio', 'err_corrupt_file', 'err_codec_not_found', 'err_file_not_found']);
 
 const doneFailures = document.getElementById('done-failures');
 
@@ -747,7 +747,7 @@ async function startBatchConversion(jobs, config) {
     } catch (e) {
       if (isCancelled) break;
       failedCount++;
-      if (!KEEP_ON_FAILURE.has(String(e).trim())) finishedPaths.add(input);
+      if (REMOVE_ON_FAILURE.has(String(e).trim())) finishedPaths.add(input);
       failures.push({ name, path: input, reason: friendlyError(e) });
       if (!isBatch) {
         removeFinished(finishedPaths);
