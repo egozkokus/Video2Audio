@@ -80,6 +80,14 @@ pub async fn convert_file(
     let state = app.state::<AppState>();
     let ffmpeg_path = state.ffmpeg_path.clone();
 
+    // Every portable copy extracts ffmpeg to the same temp folder and deletes
+    // that folder when it closes. If another copy closed since this one
+    // started, extract it again.
+    #[cfg(feature = "portable")]
+    if !ffmpeg_path.exists() {
+        crate::ffmpeg::extract_ffmpeg_to_temp().map_err(|_| "err_launch_failed".to_string())?;
+    }
+
     // Reset cancellation flag for this new conversion. From here on, any
     // cancel_conversion call will set it back to true and we'll honor it.
     *state.cancelled.lock().unwrap() = false;
