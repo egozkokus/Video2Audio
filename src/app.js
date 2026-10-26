@@ -680,6 +680,39 @@ convertBtn.addEventListener('click', async () => {
   }
 });
 
+// Drop the files a run is done with from the list. Files the batch never
+// reached, e.g. after Cancel, stay for the next run.
+function removeFinished(paths) {
+  if (paths.size === 0) return;
+  selectedFiles = selectedFiles.filter(p => !paths.has(p));
+  renderFileList();
+  updateFileCount();
+  const hasFiles = selectedFiles.length > 0;
+  fileListSection.classList.toggle('hidden', !hasFiles);
+  dropZone.classList.toggle('hidden', hasFiles);
+}
+
+// Remove only known input-specific failures. Machine/output errors and
+// unrecognized failures stay in the list so the user can fix the cause and
+// retry without having to select the files again.
+const REMOVE_ON_FAILURE = new Set(['err_no_audio', 'err_corrupt_file', 'err_codec_not_found', 'err_file_not_found']);
+
+const doneFailures = document.getElementById('done-failures');
+
+// Name every file that failed in a batch, and why. For the ones that left the
+// list this is the only record; the full path is in the tooltip.
+function showFailures(list) {
+  doneFailures.textContent = '';
+  for (const f of list) {
+    const line = document.createElement('div');
+    // Isolate the name (FSI...PDI) so its own direction can't reorder the line.
+    line.textContent = '\u2068' + f.name + '\u2069: ' + f.reason;
+    line.title = f.path;
+    doneFailures.appendChild(line);
+  }
+  doneFailures.classList.toggle('hidden', list.length === 0);
+}
+
 async function startBatchConversion(jobs, config) {
   isConverting = true;
   isCancelled = false;
@@ -697,7 +730,8 @@ async function startBatchConversion(jobs, config) {
 
   let failedCount = 0;
   let successCount = 0;
-  const succeededPaths = new Set();
+  const finishedPaths = new Set(); // leave the list after this run
+  const failures = []; // { name, path, reason } for the done card
   let firstSuccessOutput = null;
 
   for (let i = 0; i < jobs.length; i++) {
@@ -722,12 +756,16 @@ async function startBatchConversion(jobs, config) {
     try {
       await convertOneFile(input, output, config);
       successCount++;
-      succeededPaths.add(input);
+      finishedPaths.add(input);
       if (!firstSuccessOutput) firstSuccessOutput = output;
     } catch (e) {
       if (isCancelled) break;
       failedCount++;
+      if (REMOVE_ON_FAILURE.has(String(e).trim())) finishedPaths.add(input);
+      failures.push({ name, path: input, reason: friendlyError(e) });
       if (!isBatch) {
+        removeFinished(finishedPaths);
+        showFailures([]); // the message itself already gives the reason
         showDone('error', friendlyError(e));
         return;
       }
@@ -736,15 +774,11 @@ async function startBatchConversion(jobs, config) {
     if (isCancelled) break;
   }
 
-  // Remove successfully-converted files so they aren't reconverted next time
-  if (succeededPaths.size > 0) {
-    selectedFiles = selectedFiles.filter(p => !succeededPaths.has(p));
-    renderFileList();
-    updateFileCount();
-    const hasFiles = selectedFiles.length > 0;
-    fileListSection.classList.toggle('hidden', !hasFiles);
-    dropZone.classList.toggle('hidden', hasFiles);
-  }
+  // Converted files, and files that failed because of the file itself, leave
+  // the list so the next run only takes what the user adds; every failure is
+  // named on the done card.
+  removeFinished(finishedPaths);
+  showFailures(failures);
 
   if (isCancelled) {
     showDone('cancelled', t('cancelled'));
