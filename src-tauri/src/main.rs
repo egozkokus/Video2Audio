@@ -28,13 +28,18 @@ pub(crate) struct AppState {
 fn open_in_explorer(path: String) {
     use std::os::windows::process::CommandExt;
     let p = std::path::Path::new(&path);
+    // Quote only the path. `Command::arg` would wrap the whole "/select,..."
+    // token in quotes when the path has a space, and Explorer then ignores it
+    // and opens Documents instead. Windows paths cannot contain '"'.
     let arg = if p.is_file() {
-        format!("/select,{}", path)
+        format!("/select,\"{}\"", path)
     } else {
-        path.clone()
+        // A folder, or a file that was moved/deleted meanwhile: open its folder.
+        let dir = if p.is_dir() { p } else { p.parent().unwrap_or(p) };
+        format!("\"{}\"", dir.display())
     };
     let _ = std::process::Command::new("explorer.exe")
-        .arg(arg)
+        .raw_arg(arg)
         .creation_flags(0x08000000)
         .spawn();
 }
