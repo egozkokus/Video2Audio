@@ -9,8 +9,21 @@ Supports MP3 and WAV output with configurable bitrate and sample rate. Drag-and-
 - Convert `mp4`, `mkv`, `avi`, `mov`, `flv`, `webm`, `wmv` (and more) to MP3 / WAV
 - Batch conversion with per-file progress
 - Pause, resume, cancel
-- Drag-and-drop and file association ("Open with Video2Audio")
+- Drag-and-drop, including media files dropped onto the portable `.exe`
+- Load media paths passed on the command line without starting conversion
 - Two distribution modes: NSIS installer and standalone portable `.exe`
+
+## Opening files from Explorer or the command line
+
+Pass one or more media paths to either executable, for example:
+
+```powershell
+video2audio.exe "C:\Media\lesson one.mp4" "C:\Media\lesson two.mkv"
+```
+
+Files are validated and added to the list. Choose the output settings and press
+Convert when ready. The installer does not automatically replace video player
+file associations.
 
 ## Requirements (development)
 

@@ -1,71 +1,43 @@
-; Custom NSIS installer hooks for Video2Audio
+; Installer hooks for Video2Audio.
+; Stop claiming default video associations. For upgrades, restore a saved
+; association only when the old shared ProgID still points to this install.
 
-!macro NSIS_HOOK_PREFINISH
-  ; Hide the empty "Show ReadMe" checkbox
-  ShowWindow $mui.FinishPage.ShowReadme 0
+!macro _RestoreLegacyAssociation EXT
+  ReadRegStr $R1 HKCU "Software\Classes\.${EXT}" ""
+  StrCmp $R1 "Video File" 0 v2a_restore_done_${EXT}
+  ClearErrors
+  ReadRegStr $R2 HKCU "Software\Classes\.${EXT}" "Video File_backup"
+  IfErrors v2a_restore_done_${EXT}
+  ; A repeated old install may have backed up its own ProgID. Do not guess.
+  StrCmp $R2 "Video File" v2a_restore_done_${EXT}
+  StrCmp $R2 "" v2a_restore_empty_${EXT}
+  WriteRegStr HKCU "Software\Classes\.${EXT}" "" "$R2"
+  Goto v2a_restore_remove_backup_${EXT}
+v2a_restore_empty_${EXT}:
+  DeleteRegValue HKCU "Software\Classes\.${EXT}" ""
+v2a_restore_remove_backup_${EXT}:
+  DeleteRegValue HKCU "Software\Classes\.${EXT}" "Video File_backup"
+v2a_restore_done_${EXT}:
 !macroend
 
-!macro CUSTOM_INSTALL_CLEANUP
-  ; Clean up old temp-based ffmpeg if it exists (migration from older versions)
-  RMDir /r "$TEMP\video2audio"
-  RMDir /r "$APPDATA\Video2Audio"
-!macroend
-
-; ---- Context menu: "Convert to MP3" for supported file types ----
-
-!macro _RegisterContextMenu EXT
-  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.${EXT}\shell\V2A_ConvertMP3" "" "Convert to MP3"
-  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.${EXT}\shell\V2A_ConvertMP3" "Icon" "$INSTDIR\Video2Audio.exe"
-  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.${EXT}\shell\V2A_ConvertMP3\command" "" '"$INSTDIR\Video2Audio.exe" --convert "%1"'
-!macroend
-
-!macro _UnregisterContextMenu EXT
-  DeleteRegKey HKCU "Software\Classes\SystemFileAssociations\.${EXT}\shell\V2A_ConvertMP3"
-!macroend
-
-!macro _RegisterAllContextMenus
-  !insertmacro _RegisterContextMenu "mp4"
-  !insertmacro _RegisterContextMenu "mkv"
-  !insertmacro _RegisterContextMenu "avi"
-  !insertmacro _RegisterContextMenu "mov"
-  !insertmacro _RegisterContextMenu "flv"
-  !insertmacro _RegisterContextMenu "ts"
-  !insertmacro _RegisterContextMenu "webm"
-  !insertmacro _RegisterContextMenu "wmv"
-  !insertmacro _RegisterContextMenu "ogg"
-  !insertmacro _RegisterContextMenu "flac"
-  !insertmacro _RegisterContextMenu "m4a"
-  !insertmacro _RegisterContextMenu "wma"
-  !insertmacro _RegisterContextMenu "wav"
-  !insertmacro _RegisterContextMenu "aac"
-  !insertmacro _RegisterContextMenu "mp3"
-!macroend
-
-!macro _UnregisterAllContextMenus
-  !insertmacro _UnregisterContextMenu "mp4"
-  !insertmacro _UnregisterContextMenu "mkv"
-  !insertmacro _UnregisterContextMenu "avi"
-  !insertmacro _UnregisterContextMenu "mov"
-  !insertmacro _UnregisterContextMenu "flv"
-  !insertmacro _UnregisterContextMenu "ts"
-  !insertmacro _UnregisterContextMenu "webm"
-  !insertmacro _UnregisterContextMenu "wmv"
-  !insertmacro _UnregisterContextMenu "ogg"
-  !insertmacro _UnregisterContextMenu "flac"
-  !insertmacro _UnregisterContextMenu "m4a"
-  !insertmacro _UnregisterContextMenu "wma"
-  !insertmacro _UnregisterContextMenu "wav"
-  !insertmacro _UnregisterContextMenu "aac"
-  !insertmacro _UnregisterContextMenu "mp3"
-!macroend
-
-; ---- Hooks ----
-
-!macro customInstall
-  !insertmacro CUSTOM_INSTALL_CLEANUP
-  !insertmacro _RegisterAllContextMenus
-!macroend
-
-!macro customUninstall
-  !insertmacro _UnregisterAllContextMenus
+!macro NSIS_HOOK_PREINSTALL
+  Push $R0
+  Push $R1
+  Push $R2
+  ReadRegStr $R0 HKCU "Software\Classes\Video File\shell\open\command" ""
+  ; Older Tauri templates did not quote the executable. Accept both forms.
+  StrCmp $R0 '$INSTDIR\${MAINBINARYNAME}.exe "%1"' v2a_restore_legacy
+  StrCmp $R0 '"$INSTDIR\${MAINBINARYNAME}.exe" "%1"' 0 v2a_restore_legacy_done
+v2a_restore_legacy:
+  !insertmacro _RestoreLegacyAssociation "mp4"
+  !insertmacro _RestoreLegacyAssociation "mkv"
+  !insertmacro _RestoreLegacyAssociation "avi"
+  !insertmacro _RestoreLegacyAssociation "mov"
+  !insertmacro _RestoreLegacyAssociation "flv"
+  !insertmacro _RestoreLegacyAssociation "webm"
+  !insertmacro _RestoreLegacyAssociation "wmv"
+v2a_restore_legacy_done:
+  Pop $R2
+  Pop $R1
+  Pop $R0
 !macroend

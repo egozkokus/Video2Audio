@@ -42,14 +42,7 @@
     "resources": {
       "binaries/ffmpeg-x86_64-pc-windows-msvc.exe": "ffmpeg.exe"
     },
-    "fileAssociations": [
-      {
-        "ext": ["mp4", "mkv", "avi", "mov", "flv", "webm", "wmv"],
-        "mimeType": "video/*",
-        "name": "Video File",
-        "role": "Viewer"
-      }
-    ],
+    "fileAssociations": [],
     "windows": {
       "certificateThumbprint": "533BAC4584E81A605E82E33893FD96825FE0159D",
       "digestAlgorithm": "sha256",

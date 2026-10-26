@@ -22,6 +22,17 @@ pub(crate) struct AppState {
     pub(crate) scan_cancelled: Arc<AtomicBool>,
 }
 
+/// Read startup paths after the frontend is ready, then validate them through
+/// the same command used by the file picker. argv already preserves spaces.
+#[tauri::command]
+fn get_startup_files() -> Vec<String> {
+    std::env::args_os()
+        .skip(1)
+        .filter(|arg| arg.as_os_str() != std::ffi::OsStr::new("--convert"))
+        .filter_map(|arg| arg.into_string().ok())
+        .collect()
+}
+
 /// Open a file's parent folder in Explorer with the file highlighted.
 /// If the path is a folder (or the file vanished), opens the folder itself.
 #[tauri::command]
@@ -209,6 +220,7 @@ fn main() {
             media::validate_media_files,
             media::scan_folder,
             media::cancel_scan,
+            get_startup_files,
             build_source_output_paths,
             open_in_explorer
         ])
