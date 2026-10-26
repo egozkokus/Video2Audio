@@ -368,8 +368,14 @@ header h1 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  direction: ltr;
+  /* Each name takes its own direction, so a Hebrew name reads right-to-left
+     and loses its END (not its beginning) to the ellipsis. */
+  unicode-bidi: plaintext;
   text-align: left;
+}
+
+[dir="rtl"] .file-item-name {
+  text-align: right;
 }
 
 .file-item-remove {
@@ -604,7 +610,6 @@ select:focus {
   font-weight: 500;
   color: var(--text);
   text-align: center;
-  direction: ltr;
 }
 
 .progress-bar-container {
@@ -703,7 +708,6 @@ select:focus {
 .done-location {
   font-size: 12px;
   color: var(--text-dim);
-  direction: ltr;
   word-break: break-all;
   max-width: 100%;
   line-height: 1.4;
